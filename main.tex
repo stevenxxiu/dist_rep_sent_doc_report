@@ -1,0 +1,41 @@
+\PassOptionsToPackage{pdfpagelabels=false}{hyperref}
+\setlength{\paperheight}{11in}
+\documentclass{article}
+\usepackage{natbib}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+
+\makeatletter
+\renewcommand\hyper@natlinkbreak[2]{#1}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\makeatother
+
+\begin{document}
+
+\title{Reproduction of Distributed Representations of Sentences and Documents}
+
+\author{
+  \textbf{Xingyi Xu} \\ University of Melbourne \\ \texttt{stevenxxiu@gmail.com} \and
+  \textbf{Jey Han Lau} \\ IBM Research \\ \texttt{depthchargex@gmail.com} \and
+  \textbf{Timothy Baldwin} \\ University of Melbourne \\ \texttt{tb@ldwin.net}
+}
+\maketitle
+
+\begin{abstract}
+We attempted to reproduce the results of the paper ``Distributed Representations of Sentences and Documents'' for the imdb sentiment analysis dataset, using \texttt{tensorflow}. We could not obtain the paper's claim of an 7.42\% error rate, and instead we managed 12.08\%. This is however very close to the results of \texttt{gensim}, another implementation of the paper, in a similar setting, which gives an error rate of 12.04\%.
+\end{abstract}
+
+\section{Introduction}
+\texttt{word2vec} was one of the first papers in which words were successfully represented as dense embedding vectors of fixed size. Words
+
+\section{Conclusions}
+We have described the process in which we attempted to reproduce the paper ``Distributed Representations of Sentences and Documents''. The main difficulties we encountered included the unclear or ommitted description for the initialization of neural network weights, objective where multiple batches were involved, an ambiguous description of the model which can be interpreted in 2 ways, and the sampling process used to generate each training example. We hope that our findings can guide future paper authors in the area of deep learning to describe their models in a clearer fashion so that they are more easily reproducible.
+
+\bibliography{main}{}
+\bibliographystyle{apalike}
+
+\end{document}
