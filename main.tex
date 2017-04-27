@@ -38,15 +38,15 @@ Despite the document vectors not being trained on sentiment information, \cite{l
 
 Of worth noting is that the second author of the paper, Tomas Mikolov, also thinks that the paper is unreproducible, commenting in a thread in the word2vec Google group that he gets error rates of 9.4\% to 10\% \cite{mikolov_distributed_2014} . This higher result can be achieved if we include the training negative sampling instead of hierarchical softmax, and if the test documents are included in the training set instead of their vectors being inferred, however this strays somewhat from the model as described in the paper \cite{mohr_rare-technologies/gensim_2017}.
 
-In the following sections, we give a detailed description of the \texttt{doc2vec} models, any ambiguities in the paper which slowed down own implementation, and a report of how we managed to implement the model.
+In the following sections, we give a detailed description of our interpretation of the \texttt{doc2vec} models, any ambiguities in the paper which slowed down own implementation, and a report of how we managed to implement the model.
 
 \section{Models}
-The idea of \texttt{doc2vec} is to predict all the words within a document, given an input vector which contains the document embedding. The hope is that the information from the document embedding can be used to predict it's words well, so that the document embedding can capture some meaning in the document. We first describe the \texttt{doc2vec} model for an arbitrary input vector $v$, then show what $v$ is respectively for \texttt{pvdm} and \texttt{dbow}.
+The idea of \texttt{doc2vec} is to predict all the words within a document, given an input vector which contains the document embedding. The hope is that the information from the document embedding can be used to predict it's words well, so that the document embedding can capture some meaning in the document. We first describe the \texttt{doc2vec} model for an arbitrary input vector $u_{d,t}$, which depends on the document $d$ and output word position $t$, then show what $u_{d,t}$ is respectively for \texttt{pvdm} and \texttt{dbow}.
 
-Given the words in a document $w_1,w_2,...,w_T$, the \texttt{doc2vec} model attempts to maximize the average log probability:
-    \[\frac{1}{T}\sum_{t=1}^T \log p(w_t|v)\]
-To represent $p(w_t|v)$, we use a dense layer plus a softmax function, which is rather standard in neural nets classifiers:
-    \[p(w_O|v)=\frac{\exp(v_{w_O}'^T v)}{\sum_{w=1}^W \exp(v_w'^T v)}\]
+Given the words in a document $w_1,w_2,...,w_T$, the \texttt{doc2vec} model attempts to maximize the log probability:
+    \[\sum_{t=1}^T \log p(w_t|u_{d,t})\]
+To represent $p(w_t|u_{d,t})$, we use a dense layer plus a softmax function, which is rather standard in neural nets classifiers:
+    \[p(w_O|u_{d,t})=\frac{\exp(v_{w_O}'^T u_{d,t})}{\sum_{w=1}^W \exp(v_w'^T u_{d,t})}\]
 here $W$ is the vocabulary size, and $v_w'$ are the scalar sums of the input for the output class (here a word) $w'$. Note there is no bias in the dense layer. However, the denominator is difficult to compute due to the large $W$ involved. Possible approaches (those used in \texttt{word2vec}) include:
 \begin{itemize}
     \item Substituting this with the hierarchical softmax.
@@ -55,10 +55,31 @@ here $W$ is the vocabulary size, and $v_w'$ are the scalar sums of the input for
 \end{itemize}
 
 \texttt{doc2vec} uses hierarchical softmax. This is a binary tree, where there are $W$ leaves each corresponding to an output word. Each node $n$ in the tree is an independent binary classifier, with an associated weight vector $v_n'$, and all nodes have the same input vector. So supposing the path of $w_O$ from the root is $n_1,...,n_L,w_O$, and $c_1,...,c_L$ such that $c_j$ is $-1$ if $n_{j+1}$ is the left child of ${n_j}$ and $1$ if it is the right child. Then we have:
-    \[p(w_O|v)=\prod_{j=1}^{L}\sigma(c_j\cdot v_{n_j}'^T v)\]
+    \[p(w_O|u_{d,t})=\prod_{j=1}^{L}\sigma(c_j\cdot v_{n_j}'^T u_{d,t})\]
 where $\sigma$ is the sigmoid funciton. It is not hard to see that this sums to $1$ by assigning each node conditional on $w_I$ a probability. The tree used in hierarchical softmax is a binary Huffman tree, to assist in computation since short codes are assigned to frequent words.
 
-Now, for \texttt{pvdm}, given the output word $w_O$, $v$ is the average or concatenation of the document embedding $v_d$ and $v_{w_1},...,v_{w_c}$, where $c$ is the context length, and $w_1,..,w_c$ precede $w_O$. If $w_O$ is the first word so that $w_1$ might not exist, we pad the document to the left so all the words which do not exist are assigned the special \texttt{null} word. This way $v$ is always the same length. For \texttt{dbow}, $v$ is just the document embedding $v_d$.
+Now, for \texttt{pvdm}, given the output word $w_O$, $u_{d,t}$ is the average or concatenation of the document embedding $v_d$ and $v_{w_1},...,v_{w_c}$, where $c$ is the context length, and $w_1,..,w_c$ precede $w_O$. If $w_O$ is the first word so that $w_1$ might not exist, we pad the document to the left so all the words which do not exist are assigned the special \texttt{null} word. This way $u_{d,t}$ is always the same length. For \texttt{dbow}, $u_{d,t}$ is just the document embedding $v_d$.
+
+For the entire document collection $\mathcal{D}$, the overall objectve is:
+    \[\sum_{d\in\mathcal{D}}\sum_{t=1}^{T_d} \log p(w_t|u_{d,t})\]
+
+\subsection{Classification}
+To apply the model to the classification of the IMDB sentiment analysis dataset, the document vectors are fed into a neural network with a dense layer and a final softmax classification layer.
+
+\subsection{Ambiguities in original paper}
+Hierarchical softmax often has a bias, it is not clear whether this is the case in the original paper. The description of the softmax in their equation (1) has a bias, however that of the \texttt{word2vec} paper does not. There is no mention of what happens in the case of hierarchical softmax. We assume that there is no bias, since this paper is an extension of \texttt{word2vec}.
+
+The overall objective is not described in the original paper. Usually it is the case that all objectives are summed for each training example, but here there are two levels of training examples -- that of documents and that of words within them. Another possible objective, normalizing for document length is:
+    \[\sum_{d\in\mathcal{D}}\frac{1}{T_d}\sum_{t=1}^{T_d} \log p(w_t|u_{d,t})\]
+
+\section{Experimental results}
+
+\subsection{Ambiguities common to most neural network papers}
+
+\subsection{Ambiguities in original paper}
+The training is not described in the original paper. This includes the training objective, the gradient descent method, and whether any batching was involved.
+
+What the context window size, $c$ actually is can be missed. It might be unclear from the start, but in the later sections the paper states ``To predict the 10-th word, we concatenate the paragraph vectors and word vectors'', so in the IMDB case, $c=9$.
 
 \section{Conclusions}
 We have described the process in which we attempted to reproduce the paper ``Distributed Representations of Sentences and Documents''. The main difficulties we encountered included the unclear or ommitted description for the initialization of neural network weights, objective where multiple batches were involved, an ambiguous description of the model which can be interpreted in 2 ways, and the sampling process used to generate each training example. We hope that our findings can guide future paper authors in the area of deep learning to describe their models in a clearer fashion so that they are more easily reproducible.
