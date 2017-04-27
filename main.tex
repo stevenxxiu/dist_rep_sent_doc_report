@@ -32,7 +32,7 @@ We attempted to reproduce the results of the paper ``Distributed Representations
 \section{Introduction}
 \texttt{word2vec} \citep{mikolov_distributed_2013} was one of the first papers in which words were successfully represented as dense embedding vectors of fixed size. The model was simple -- a sliding window was used on both sides of a central word to predict it. As to be expected, words with similar meaning were found to be grouped together in the vector space since they will predict similar words. Intriguingly, there was also meaning in the addition and subtraction of vectors, where \textit{man - woman + king $\approx$ queen}. \cite{arora_rand-walk:_2015} have come up with a theoretical explanation for this phenomena.
 
-As a simple extension of \texttt{word2vec}, \texttt{doc2vec} \citep{le_distributed_2014} attempts to extend this idea to documents, through 2 models. One, \texttt{pvdm}, bears a close resemblence to \texttt{word2vec}, in which the only change was the appending of a document id uniquely identifying a document to each window.\footnote{Our intepretation which gave the best results, the paper has another possible interpretation.} Another, \texttt{dbow}, is a simplification of \texttt{pvdm} where the words are not trained and dropped altogether.
+As an extension of the methods used in \texttt{word2vec} to documents, \texttt{doc2vec} \citep{le_distributed_2014} introduced 2 models. One, \texttt{pvdm}, uses a concatenated or averaged vector of the document embedding plus all the embeddings of words in the output word's context to predict the output word. In contrast to \texttt{word2vec}, the conditional includes the entire context (and document) instead of just the words in the context alone. Another, \texttt{dbow}, uses the document embedding only so does not require contexts nor does it gives word embeddings.
 
 Despite the document vectors not being trained on sentiment information, \cite{le_distributed_2014} report that their model was able to achieve a state-of-the-art result of a 7.42\% error rate. However, we could only produce an error rate of 12.08\%. This does not beat the best model listed for comparison, which achieves an error rate of 8.78\%.
 
@@ -41,22 +41,24 @@ Of worth noting is that the second author of the paper, Tomas Mikolov, also thin
 In the following sections, we give a detailed description of the \texttt{doc2vec} models, any ambiguities in the paper which slowed down own implementation, and a report of how we managed to implement the model.
 
 \section{Models}
-We first describe the \texttt{word2vec} skip-gram model, and then describe \texttt{pvdm} and \texttt{dbow}, which extend from it.
+The idea of \texttt{doc2vec} is to predict all the words within a document, given an input vector which contains the document embedding. The hope is that the information from the document embedding can be used to predict it's words well, so that the document embedding can capture some meaning in the document. We first describe the \texttt{doc2vec} model for an arbitrary input vector $v$, then show what $v$ is respectively for \texttt{pvdm} and \texttt{dbow}.
 
-Given the training words $w_1,w_2,...,w_T$, a window size $c$, the skip-gram model attempts to maximize the average log probability:
-    \[\frac{1}{T}\sum_{t=1}^T\sum_{-c\le j\le c,j\ne0} \log p(w_{t+j}|w_t)\]
-here $t$ is the index of each center word, and $t+j$ is an index of a word to the left and right of $t$ within distance $c$. To represent $p(w_{t+j}|w_t)$, we use a dense layer plus a softmax function, which is rather standard in neural nets classifiers:
-    \[p(w_O|w_I)=\frac{\exp(v_{w_O}'^T v_{w_I})}{\sum_{w=1}^W \exp(v_w'^T v_{w_I})}\]
-here $W$ is the vocabulary size, the embedding for word $w$ is $v_w\in\mathbb{R}^d$ for some embedding dimension $d$, and $v_w'$ are the scalar sums of the input for the output class (here a word) $w'$. Note there is no bias in the dense layer. However, the denominator is difficult to compute due to the large $W$ involved. Possible approaches include:
+Given the words in a document $w_1,w_2,...,w_T$, the \texttt{doc2vec} model attempts to maximize the average log probability:
+    \[\frac{1}{T}\sum_{t=1}^T \log p(w_t|v)\]
+To represent $p(w_t|v)$, we use a dense layer plus a softmax function, which is rather standard in neural nets classifiers:
+    \[p(w_O|v)=\frac{\exp(v_{w_O}'^T v)}{\sum_{w=1}^W \exp(v_w'^T v)}\]
+here $W$ is the vocabulary size, and $v_w'$ are the scalar sums of the input for the output class (here a word) $w'$. Note there is no bias in the dense layer. However, the denominator is difficult to compute due to the large $W$ involved. Possible approaches (those used in \texttt{word2vec}) include:
 \begin{itemize}
     \item Substituting this with the hierarchical softmax.
     \item Using Noise Contrastive Estimation (NCE), a method which gives an objective to allow for the optimization of parameters for an unnormalized probability distribution, here again we jointly optimize all conditional distributions by summing the objectives.
     \item Negative Sampling, an approximation of NCE, which is derived by assuming the noise distribution is the discrete uniform distribution over all $W$ words and $W$ negative samples are used, then using a different noise distribution and number of negative samples during training time.
 \end{itemize}
 
-\texttt{doc2vec} uses hierarchical softmax. This is a binary tree, where there are $W$ leaves each corresponding to an output word. Each node $n$ in the tree is an independent binary classifier, with an associated weight vector $v_n'$, and all nodes have the same input vector. So supposing the path of $w_O$ from the root is $n_1,...,n_m,w$, and $c_1,...,c_m$ such that $c_i$ is $-1$ if $n_{i+1}$ is the left child of ${n_i}$ and $1$ if it is the right child. Then we have:
-    \[p(w_O|w_I)=\prod_{i=1}^{m}\sigma(c_i\cdot v_{n_j}'^T v_{w_I})\]
+\texttt{doc2vec} uses hierarchical softmax. This is a binary tree, where there are $W$ leaves each corresponding to an output word. Each node $n$ in the tree is an independent binary classifier, with an associated weight vector $v_n'$, and all nodes have the same input vector. So supposing the path of $w_O$ from the root is $n_1,...,n_L,w_O$, and $c_1,...,c_L$ such that $c_j$ is $-1$ if $n_{j+1}$ is the left child of ${n_j}$ and $1$ if it is the right child. Then we have:
+    \[p(w_O|v)=\prod_{j=1}^{L}\sigma(c_j\cdot v_{n_j}'^T v)\]
 where $\sigma$ is the sigmoid funciton. It is not hard to see that this sums to $1$ by assigning each node conditional on $w_I$ a probability. The tree used in hierarchical softmax is a binary Huffman tree, to assist in computation since short codes are assigned to frequent words.
+
+Now, for \texttt{pvdm}, given the output word $w_O$, $v$ is the average or concatenation of the document embedding $v_d$ and $v_{w_1},...,v_{w_c}$, where $c$ is the context length, and $w_1,..,w_c$ precede $w_O$. If $w_O$ is the first word so that $w_1$ might not exist, we pad the document to the left so all the words which do not exist are assigned the special \texttt{null} word. This way $v$ is always the same length. For \texttt{dbow}, $v$ is just the document embedding $v_d$.
 
 \section{Conclusions}
 We have described the process in which we attempted to reproduce the paper ``Distributed Representations of Sentences and Documents''. The main difficulties we encountered included the unclear or ommitted description for the initialization of neural network weights, objective where multiple batches were involved, an ambiguous description of the model which can be interpreted in 2 ways, and the sampling process used to generate each training example. We hope that our findings can guide future paper authors in the area of deep learning to describe their models in a clearer fashion so that they are more easily reproducible.
