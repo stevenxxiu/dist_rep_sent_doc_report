@@ -30,7 +30,17 @@ We attempted to reproduce the results of the paper ``Distributed Representations
 \end{abstract}
 
 \section{Introduction}
-\texttt{word2vec} \citep{mikolov_distributed_2013} was one of the first papers in which words were successfully represented as dense embedding vectors of fixed size. Words
+\texttt{word2vec} \citep{mikolov_distributed_2013} was one of the first papers in which words were successfully represented as dense embedding vectors of fixed size. The model was simple -- a sliding window was used on both sides of a central word to predict it. As to be expected, words with similar meaning were found to be grouped together in the vector space since they will predict similar words. Intriguingly, there was also meaning in the addition and subtraction of vectors, where \textit{man - woman + king $\approx$ queen}. \cite{arora_rand-walk:_2015} have come up with a theoretical explanation for this phenomena.
+
+As a simple extension of \texttt{word2vec}, \texttt{doc2vec} \citep{le_distributed_2014} attempts to extend this idea to documents, through 2 models. One, \texttt{pvdm}, bears a close resemblence to \texttt{word2vec}, in which the only change was the appending of a document id uniquely identifying a document to each window.\footnote{Our intepretation, despite the paper giving another possible interpretation this gave the best results in our reproduction.} Another, \texttt{dbow}, is a simplification of \texttt{pvdm} where the words are not trained and dropped altogether.
+
+Despite the document vectors not being trained on sentiment information, \cite{le_distributed_2014} report that their model was able to achieve a state-of-the-art result of a 7.42\% error rate. However, we could only produce an error rate of 12.08\%. This does not beat the best model listed for comparison, which achieves an error rate of 8.78\%.
+
+Of worth noting is that the second author of the paper, Tomas Mikolov, also thinks that the paper is unreproducible, commenting in a thread in the word2vec Google group that he gets error rates of 9.4\% to 10\% \cite{mikolov_distributed_2014} . This higher result can be achieved if we include the training negative sampling instead of hierarchical softmax, and if the test documents are included in the training set instead of their vectors being inferred, however this strays somewhat from the model as described in the paper \cite{mohr_rare-technologies/gensim_2017}.
+
+In the following sections, we give a detailed description of the \texttt{doc2vec} models, any ambiguities in the paper which slowed down own implementation, and a report of how we managed to implement the algorithm.
+
+\section{Models}
 
 \section{Conclusions}
 We have described the process in which we attempted to reproduce the paper ``Distributed Representations of Sentences and Documents''. The main difficulties we encountered included the unclear or ommitted description for the initialization of neural network weights, objective where multiple batches were involved, an ambiguous description of the model which can be interpreted in 2 ways, and the sampling process used to generate each training example. We hope that our findings can guide future paper authors in the area of deep learning to describe their models in a clearer fashion so that they are more easily reproducible.
