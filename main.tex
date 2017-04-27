@@ -70,6 +70,8 @@ Hierarchical softmax often has a bias, it is not clear whether this is the case 
 The overall objective is not described in the original paper. Usually it is the case that all objectives are summed for each training example, but here there are two levels of training examples -- that of documents and that of words within them. Another possible objective, normalizing for document length is:
     \[\sum_{d\in\mathcal{D}}\frac{1}{T_d}\sum_{t=1}^{T_d} \log p(w_{d_t}|u_{d,t})\]
 
+For the classification network, the neural network is not very well described. We assume it is the most common neural network, with the dense layer and softmax classification layer including biases.
+
 \section{Experimental results}
 
 \subsection{Ambiguities common to most neural network papers}
