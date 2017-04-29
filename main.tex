@@ -92,7 +92,7 @@ We have described the process in which we attempted to reproduce the paper ``Dis
 
 \begin{appendices}
 \section{\texttt{gensim}} \label{sec:gensim}
-\texttt{gensim} is another implementation of \texttt{doc2vec}, which is a python port of Mikolov's C implementation of \texttt{doc2vec}. Here we list how we used this implementation for comparison, and some additional differences \texttt{gensim}'s implementation has compared to the paper's model.
+\texttt{gensim} is another implementation of \texttt{doc2vec}, which is a python port of Mikolov's C implementation of \texttt{doc2vec}. Here we list how we used this implementation for comparison, and some additional differences \texttt{gensim}'s implementation (inroduced in Mikolov's C implementation) has compared to the paper's model.
 
 \subsection{Modifications to the \texttt{gensim} notebook}
 We use a slightly different setup to the example \texttt{gensim} notebook \citep{mohr_gensim_2017}. The notebook selects the best epoch based on the test set, which perhaps could be interpreted as early stopping but since this is not the classification stage this is a stretch, so we use the result after all epochs are run. The notebook also includes the test document for training word vectors, which we exclude entirely and use inferred vectors only during testing. We also use hierarchical softmax instead of negative sampling.
