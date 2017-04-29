@@ -6,12 +6,12 @@
 \usepackage{url}
 \usepackage{amssymb}
 \usepackage{amsmath}
+\usepackage[titletoc,title]{appendix}
 \usepackage[utf8]{inputenc}
 \usepackage[margin=1in]{geometry}
 
 \makeatletter
-\renewcommand\hyper@natlinkbreak[2]{#1}
-\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand*{\Appendixautorefname}{Appendix}
 \makeatother
 
 \begin{document}
@@ -26,7 +26,7 @@
 \maketitle
 
 \begin{abstract}
-We attempted to reproduce the results of the paper ``Distributed Representations of Sentences and Documents'' for the imdb sentiment analysis dataset, using \texttt{tensorflow}. We could not obtain the paper's claim of an 7.42\% error rate, and instead we managed 12.08\%. This is however very close to the results of \texttt{gensim}, another implementation of the paper, in a similar setting, which gives an error rate of 12.04\%.
+We attempted to reproduce the results of the paper ``Distributed Representations of Sentences and Documents'' for the imdb sentiment analysis dataset, using \texttt{tensorflow}. We could not obtain the paper's claim of an 7.42\% error rate, and instead we managed 11.74\%. This is however very close to the results of \texttt{gensim}, another implementation of the paper, in a similar setting, which gives an error rate of 12.04\%.
 \end{abstract}
 
 \section{Introduction}
@@ -34,9 +34,9 @@ We attempted to reproduce the results of the paper ``Distributed Representations
 
 As an extension of the methods used in \texttt{word2vec} to documents, \texttt{doc2vec} \citep{le_distributed_2014} introduced 2 models. One, \texttt{pvdm}, uses a concatenated or averaged vector of the document embedding plus all the embeddings of words in the output word's context to predict the output word. In contrast to \texttt{word2vec}, the conditional includes the entire context (and document) instead of just the words in the context alone. Another, \texttt{dbow}, uses the document embedding only so does not require contexts nor does it gives word embeddings.
 
-Despite the document vectors not being trained on sentiment information, \cite{le_distributed_2014} report that their model was able to achieve a state-of-the-art result of a 7.42\% error rate. However, we could only produce an error rate of 12.08\%. This does not beat the best model listed for comparison, which achieves an error rate of 8.78\%.
+Despite the document vectors not being trained on sentiment information, \cite{le_distributed_2014} report that their model was able to achieve a state-of-the-art result of a 7.42\% error rate. However, we could only produce an error rate of 11.74\%.\footnote{Our source code is available at \url{https://github.com/stevenxxiu/dist_rep_sent_doc/}.} This does not beat the best model listed for comparison, which achieves an error rate of 8.78\%.
 
-Of worth noting is that the second author of the paper, Tomas Mikolov, also thinks that the paper is unreproducible, commenting in a thread in the word2vec Google group that he gets error rates of 9.4\% to 10\% \cite{mikolov_distributed_2014} . This higher result can be achieved if we include the training negative sampling instead of hierarchical softmax, and if the test documents are included in the training set instead of their vectors being inferred, however this strays somewhat from the model as described in the paper \cite{mohr_rare-technologies/gensim_2017}.
+Of worth noting is that the second author of the paper, Tomas Mikolov, also thinks that the paper is unreproducible, commenting in a thread in the word2vec Google group that he gets error rates of 9.4\% to 10\% \cite{mikolov_distributed_2014} . This higher result can be achieved if we use negative sampling instead of hierarchical softmax, and if the test documents are included in the training set instead of their vectors being inferred \citep{mohr_gensim_2017}, however this strays somewhat from the model as described in the paper.
 
 In the following sections, we give a detailed description of our interpretation of the \texttt{doc2vec} models, any ambiguities in the paper which slowed down own implementation, and a report of how we managed to implement the model.
 
@@ -52,12 +52,12 @@ here $W$ is the vocabulary size, and $v_w'$ are the scalar sums of the input for
 \begin{itemize}
     \item Substituting this with the hierarchical softmax.
     \item Using Noise Contrastive Estimation (NCE), a method which gives an objective to allow for the optimization of parameters for an unnormalized probability distribution, here again we jointly optimize all conditional distributions by summing the objectives.
-    \item Negative Sampling, an approximation of NCE, which is derived by assuming the noise distribution is the discrete uniform distribution over all $W$ words and $W$ negative samples are used, then using a different noise distribution and number of negative samples during training time.
+    \item Negative Sampling, an approximation of NCE, which is derived by assuming the noise distribution is the discrete uniform distribution over all $W$ words and $W$ negative samples are used per word, then using a different noise distribution and number of negative samples during training time.
 \end{itemize}
 
 \texttt{doc2vec} uses hierarchical softmax. This is a binary tree, where there are $W$ leaves each corresponding to an output word. Each node $n$ in the tree is an independent binary classifier, with an associated weight vector $v_n'$, and all nodes have the same input vector. So supposing the path of $w_O$ from the root is $n_1,...,n_L,w_O$, and $c_1,...,c_L$ such that $c_j$ is $-1$ if $n_{j+1}$ is the left child of ${n_j}$ and $1$ if it is the right child. Then we have:
     \[p(w_O|u_{d,t})=\prod_{j=1}^{L}\sigma(c_j\cdot v_{n_j}'^T u_{d,t})\]
-where $\sigma$ is the sigmoid funciton. It is not hard to see that this sums to $1$ by assigning each node conditional on $w_I$ a probability. The tree used in hierarchical softmax is a binary Huffman tree, to assist in computation since short codes are assigned to frequent words.
+where $\sigma$ is the sigmoid function. It is not hard to see that this sums to $1$ by assigning each node conditional on $w_I$ a probability. The tree used in hierarchical softmax is a binary Huffman tree, to assist in computation since short codes are assigned to frequent words.
 
 Now, for \texttt{pvdm}, given the output word $w_O$, $u_{d,t}$ is the average or concatenation of the document embedding $v_d$ and $v_{w_1},...,v_{w_c}$, where $c$ is the context length, and $w_1,..,w_c$ precede $w_O$. If $w_O$ is the first word so that $w_1$ might not exist, we pad the document to the left so all the words which do not exist are assigned the special \texttt{null} word. This way $u_{d,t}$ is always the same length. For \texttt{dbow}, $u_{d,t}$ is just the document embedding $v_d$.
 
@@ -71,9 +71,12 @@ The overall objective is not described in the original paper. Usually it is the 
     \[\sum_{d\in\mathcal{D}}\frac{1}{T_d}\sum_{t=1}^{T_d} \log p(w_{d_t}|u_{d,t})\]
 In our case we just assume that it is a sum for simplicity.
 
-For the classification network, the neural network is not very well described. We assume it is the most common neural network, with the dense layer and softmax classification layer including biases.
+For the classification network, the neural network is not very well described. We assume it is the most common neural network, with the dense layer and softmax classification layer including biases, and do not introduce any regularization.
 
 \section{Experimental results}
+In our reproduction of the original methods of the paper, we could not reproduce the paper's claim of an 7.42\% error rate, and instead we managed 11.74\%. Under a similar setting, using another implementation, \texttt{gensim} \citep{rehurek_software_2010}, we arrived at a similar error rate of 12.04\%.\footnote{Details regarding \texttt{gensim} are in \autoref{sec:gensim}.}
+
+We initially did not succeed in getting an error rate above 50\%, so we used \texttt{gensim}'s source code for guidance. The key changes which allowed us to do so included proper initialization of the weights, and using the summed loss in each mini-batch instead of the mean.
 
 \subsection{Ambiguities common to most neural network papers}
 
@@ -82,8 +85,32 @@ The training is not described in the original paper. This includes the training 
 
 What the context window size, $c$ actually is can be missed. It might be unclear from the start, but in the later sections the paper states ``To predict the 10-th word, we concatenate the paragraph vectors and word vectors'', so in the IMDB case, $c=9$.
 
+\subsection{Techniques only mentioned in the \texttt{word2vec} paper}
+
 \section{Conclusions}
 We have described the process in which we attempted to reproduce the paper ``Distributed Representations of Sentences and Documents''. The main difficulties we encountered included the unclear or ommitted description for the initialization of neural network weights, objective where multiple batches were involved, an ambiguous description of the model which can be interpreted in 2 ways, and the sampling process used to generate each training example. We hope that our findings can guide future paper authors in the area of deep learning to describe their models in a clearer fashion so that they are more easily reproducible.
+
+\begin{appendices}
+\section{\texttt{gensim}} \label{sec:gensim}
+\texttt{gensim} is another implementation of \texttt{doc2vec}, which is a python port of Mikolov's C implementation of \texttt{doc2vec}. Here we list how we used this implementation for comparison, and some additional differences \texttt{gensim}'s implementation has compared to the paper's model.
+
+\subsection{Modifications to the \texttt{gensim} notebook}
+We use a slightly different setup to the example \texttt{gensim} notebook \citep{mohr_gensim_2017}. The notebook selects the best epoch based on the test set, which perhaps could be interpreted as early stopping but since this is not the classification stage this is a stretch, so we use the result after all epochs are run. The notebook also includes the test document for training word vectors, which we exclude entirely and use inferred vectors only during testing. We also use hierarchical softmax instead of negative sampling.
+
+\subsection{Differences in \texttt{gensim}}
+Besides the slightly different setup in the \texttt{gensim} notebook, the \texttt{gensim} model implementation itself also presents some differences not mentioned in any paper.
+
+There is the option to remove infrequent words. Words below a frequency threshold are excluded as if they were not in the document at all, during training and inference.
+
+It alters the frequent word subsampling formula. The probability of a word being included in the document in \texttt{word2vec} is $P(w)=\max\{(t/f(w))^{1/2}, 1\}$, where $f(w)$ is the empirical probability of the word ${w}$ in the training set, and $t$ is some chosen threshold. The altered formula is $P(w)=\max\{(t/f(w))^{1/2} + {t/f(w)}, 1\}$. Since for most words $t/f(w)\approx 0$, the difference between the two formulas are not great. We tried the altered formula but obtained a slightly better result using the original.
+
+The pv-dm average model does not always uses the full window size and uses a randomly selected reduced size, we did not use this model
+
+The pv-dm model predicts the center word instead of last word, similar to the \texttt{word2vec} skip-gram model. The window sizes on the left and right are required to be the same. We found that predicting the end word gave better results, while the word embeddings are subjectively similarly good.
+
+\texttt{gensim} does not use mini-batching. In order to make use of parallelism, the documents are first shuffled then queued, each training thread takes a document from the queue, and trains on all windows for a single document from left to right. The threads read and update the weights without any form of synchronization. If we assume that all threads run at identical speed and start at identical times, i.e. at each time step, $n$ threads read the parameters, then compute the updates, then update the parameters through atomic vector addition, this is equivalent to mini-batching with a batch size of $n$, with summed loss. Examples in the mini-batch are the same as in the case of \texttt{gensim}'s threads, note that it always contains windows from different documents.
+
+\end{appendices}
 
 \bibliography{main}{}
 \bibliographystyle{apalike}
