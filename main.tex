@@ -5,13 +5,16 @@
 \usepackage{url}
 \usepackage{amssymb}
 \usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{siunitx}
 \usepackage[titletoc,title]{appendix}
 \usepackage[utf8]{inputenc}
 \usepackage[margin=1in]{geometry}
 
-\makeatletter
 \newcommand*{\Appendixautorefname}{Appendix}
-\makeatother
+\newcommand{\specialcell}[2][c]{\begin{tabular}[#1]{@{}c@{}}#2\end{tabular}}
+\newsavebox\CBox\def\textBF#1{\sbox\CBox{#1}\resizebox{\wd\CBox}{\ht\CBox}{\textbf{#1}}}\parindent=0pt
+\sisetup{exponent-product = \cdot}
 
 \begin{document}
 
@@ -95,7 +98,45 @@ It is not described how unknown words during validation are handled. We followed
 Another technique we found to be useful was only mentioned in the \texttt{word2vec} paper was frequent word sub-sampling. For each epoch, this preprocessed each document first by supposing the probability of a word being included in the document in \texttt{word2vec} is $P(w)=\max\{(t/f(w))^{1/2}, 1\}$, where $f(w)$ is the empirical probability of the word ${w}$ in the training set, and $t$ is some chosen threshold. Windows are then extracted from the documents in a separate pass. The idea is that frequent words may provide less information value than rarer words, while it contributes too much weight to the loss function, thus resulting in less good word vectors for infrequent words. We found this to be useful for both the \texttt{pv-dm} and \texttt{dbow} models.
 
 \subsection{Results}
-The non-concatenated results are in XXX. We can see that the \texttt{dbow} model performs best, and that $100$-dimensional embeddings are good enough and superior to $400$-dimensional embeddings. In our concatenated results (XXX), we find that neural nets do not help in this case, and logistic regression is sufficient. Additionally, we see that \texttt{dbow} alone is better than concatenating \texttt{dbow} and \texttt{pv-dm} document vectors. This makes some sense in that we do not expect a model to contribute much information to the base model if it performs worse. Here \texttt{pv-dm} is \texttt{dbow} with the additional context of words in each window.
+The non-concatenated results are in \autoref{table:doc_emb}. We can see that the \texttt{dbow} model performs best, and that $100$-dimensional embeddings are good enough and superior to $400$-dimensional embeddings. In \autoref{table:classification}, we find that neural nets do not help in this case, and logistic regression is sufficient. Additionally, we see that \texttt{dbow} alone is better than concatenating \texttt{dbow} and \texttt{pv-dm} document vectors. This makes some sense in that we do not expect a model to contribute much information to the base model if it performs worse. Here \texttt{pv-dm} is \texttt{dbow} with the additional context of words in each window.
+
+\begin{table}[htbp]\centering
+\setlength\tabcolsep{2pt}
+\begin{tabular}{|l|l|l|l|l|l|l|r|}
+    \hline
+    Method & Embedding size & \specialcell{Frequent word \\ sub-sampling} & \specialcell{Target word \\ location} & Window size & Train epochs & Val epochs & Error rate \\ \hline
+    pvdm & 100 & none             & middle & 10 & 20  & 10  & 0.24924 \\
+    pvdm & 100 & gensim \SI{1e-3} & middle & 10 & 20  & 10  & 0.20672 \\
+    pvdm & 100 & w2v \SI{1e-3}    & middle & 10 & 20  & 10  & 0.19820 \\
+    pvdm & 100 & none             & end    & 9  & 20  & 10  & 0.20108 \\
+    pvdm & 100 & w2v \SI{1e-3}    & end    & 9  & 20  & 10  & 0.15684 \\
+    pvdm & 100 & w2v \SI{1e-3}    & end    & 9  & 100 & 100 & 0.16920 \\
+    pvdm & 400 & w2v \SI{1e-3}    & end    & 9  & 100 & 100 & 0.29400 \\
+    dbow & 100 & none             & -      & -  & 20  & 10  & 0.11916 \\
+    dbow & 100 & none             & -      & -  & 100 & 100 & 0.13272 \\
+    dbow & 100 & w2v \SI{1e-3}    & -      & -  & 20  & 10  & \textBF{0.11744} \\
+    dbow & 400 & w2v \SI{1e-3}    & -      & -  & 20  & 10  & 0.12568 \\
+    \hline
+\end{tabular}
+\caption{\texttt{pv-dm} and \texttt{dbow} results for logistic regression classification. All results use a learning rate of $0.001$.}
+\label{table:doc_emb}
+\end{table}
+
+\begin{table}[htbp]\centering
+\begin{tabular}{|l|l|l|r|}
+    \hline
+    Method     & Layer sizes & Doc vecs  & Error rate \\ \hline
+    logreg     & -           & pvdm      & 0.19820 \\
+    logreg     & -           & dbow      & \textBF{0.11916}    \\
+    logreg     & -           & dbow+pvdm & 0.12092 \\
+    neural net & 50          & dbow+pvdm & 0.12072 \\
+    neural net & 25          & dbow+pvdm & 0.12056 \\
+    neural net & 10          & dbow+pvdm & 0.12092 \\
+    \hline
+\end{tabular}
+\caption{Classification results for logistic regression vs neural nets. All results use a learning rate of $0.1$ and $30$ epochs.}
+\label{table:classification}
+\end{table}
 
 \section{Conclusions}
 We have described the process in which we attempted to reproduce the paper ``Distributed Representations of Sentences and Documents''. The main difficulties we encountered included the unclear or ommitted description for the initialization of neural network weights, objective where multiple batches were involved, an ambiguous description of the model which can be interpreted in 2 ways, and the sampling process used to generate each training example. We hope that our findings can guide future paper authors in the area of deep learning to describe their models in a clearer fashion so that they are more easily reproducible.
