@@ -15,6 +15,7 @@
 \newcommand{\specialcell}[2][c]{\begin{tabular}[#1]{@{}c@{}}#2\end{tabular}}
 \newsavebox\CBox\def\textBF#1{\sbox\CBox{#1}\resizebox{\wd\CBox}{\ht\CBox}{\textbf{#1}}}\parindent=0pt
 \sisetup{exponent-product = \cdot}
+\setlength{\parskip}{0.8em}
 
 \begin{document}
 
@@ -155,7 +156,7 @@ There is the option to remove infrequent words. Words below a frequency threshol
 
 It alters the frequent word subsampling formula. The probability of a word being included in the document in \texttt{word2vec} is $P(w)=\max\{(t/f(w))^{1/2}, 1\}$. The altered formula is $P(w)=\max\{(t/f(w))^{1/2} + {t/f(w)}, 1\}$. Since for most words $t/f(w)\approx 0$, the difference between the two formulas are not great. We tried the altered formula but obtained a slightly better result using the original.
 
-The \texttt{pv-dm} average model does not always uses the full window size and uses a randomly selected reduced size, we did not use this model
+The \texttt{pv-dm} average model does not always uses the full window size and uses a randomly selected reduced size, we did not use this model.
 
 The \texttt{pv-dm} model predicts the center word instead of last word, similar to the \texttt{word2vec} skip-gram model. The window sizes on the left and right are required to be the same. We found that predicting the end word gave better results, while the word embeddings are subjectively similarly good.
 
