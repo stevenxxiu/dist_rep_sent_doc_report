@@ -11,11 +11,14 @@
 \usepackage[utf8]{inputenc}
 \usepackage[margin=1in]{geometry}
 
+\makeatletter
 \newcommand*{\Appendixautorefname}{Appendix}
 \newcommand{\specialcell}[2][c]{\begin{tabular}[#1]{@{}c@{}}#2\end{tabular}}
 \newsavebox\CBox\def\textBF#1{\sbox\CBox{#1}\resizebox{\wd\CBox}{\ht\CBox}{\textbf{#1}}}\parindent=0pt
 \sisetup{exponent-product = \cdot}
 \setlength{\parskip}{0.8em}
+\renewcommand\hyper@natlinkbreak[2]{#1}
+\makeatother
 
 \begin{document}
 
