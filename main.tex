@@ -70,7 +70,7 @@ Now, for \texttt{pv-dm}, given the output word $w_O$, $u_{d,t}$ is the average o
 \subsection{Classification}
 To apply the model to the classification of the IMDB sentiment analysis dataset, the document vectors are fed into a neural network with a dense layer and a final softmax classification layer.
 
-\subsection{Ambiguities in original paper}
+\subsection{Ambiguities in the paper}
 Hierarchical softmax often has a bias, it is not clear whether this is the case in the original paper. The description of the softmax in their equation (1) has a bias, however that of the \texttt{word2vec} paper does not. There is no mention of what happens in the case of hierarchical softmax. We assume that there is no bias, since this paper is an extension of \texttt{word2vec}.
 
 The overall objective is not described in the original paper. Usually it is the case that all objectives are summed for each training example, but here there are two levels of training examples -- that of documents and that of words within them. So another possible objective, normalizing for document length is:
@@ -87,7 +87,7 @@ We initially did not succeed in getting an error rate above 50\%, so we used \te
 \subsection{Ambiguities common to most neural network papers}
 There are some underspecified parts of the model which are also common to most neural network papers. In particular, the random initializations of the parameters, here word embedding and softmax weights are not specified. We found that these were quite important to the model, as our initial attempts did not work. Using the initializations of \texttt{gensim}, that of $U(-1/d, 1/d)^d$ for word embeddings for embedding dimension size $d$ and $0$ for the hierarchical softmax weights worked.
 
-\subsection{Ambiguities in original paper}
+\subsection{Ambiguities in the paper}
 The training is not described in the original paper. This includes the training objective, the gradient descent method, and whether any batching was involved. For the objective, we used the most common setup of randomly shuffling all training examples, training a batch of that per time step with a batch size of $2048$.
 
 We first attempted to use stochastic gradient descent by itself. We found that the sum loss for each batch instead of the mean loss appeared to affect the learning rates much less depending for different batch sizes. To explain this, suppose the loss function is $l$ with single weight $w$, then the summed batch update for weight $w$ is $\partial\sum_{i=1}^n l(x_i, w) / \partial{w} = \sum_{i=1}^n \partial l(x_i, w)/\partial(w)$. So when using the mean, the single gradient step uses the mean gradient of all training instances. On the contrary, if the weight is different for each training instance, we have $\partial\sum_{i=1}^n l(x_i, w_i) / \partial{w_i} = \partial l(x_i, w_i)/\partial(w_i)$, so it makes less sense to use the mean. Since the model makes use of word embeddings, the model is closer to the latter, since most batches do not share the same words and documents, hence the same parameters for the word and document embeddings.
