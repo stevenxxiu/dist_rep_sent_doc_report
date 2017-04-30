@@ -122,7 +122,7 @@ The non-concatenated results are in \autoref{table:doc_emb}. We can see that the
     dbow & 400 & w2v \SI{1e-3}    & -      & -  & 20  & 10  & 0.12568 \\
     \hline
 \end{tabular}
-\caption{\texttt{pv-dm} and \texttt{dbow} results for logistic regression classification. All results use a learning rate of $0.001$.}
+\caption{\texttt{pv-dm} and \texttt{dbow} results for logistic regression classification. All results use a learning rate of $0.001$, and a batch size of $2048$.}
 \label{table:doc_emb}
 \end{table}
 
@@ -138,7 +138,7 @@ The non-concatenated results are in \autoref{table:doc_emb}. We can see that the
     neural net & 10          & dbow+pvdm & 0.12092 \\
     \hline
 \end{tabular}
-\caption{Classification results for logistic regression vs neural nets. All results use a learning rate of $0.1$ and $30$ epochs.}
+\caption{Classification results for logistic regression vs neural nets. All results use a learning rate of $0.1$, $30$ epochs, and a batch size of $2048$.}
 \label{table:classification}
 \end{table}
 
