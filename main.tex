@@ -46,7 +46,7 @@ Despite the document vectors not being trained on sentiment information, \cite{l
 
 Of worth noting is that the second author of the paper, Tomas Mikolov, also thinks that the paper is unreproducible, commenting in a thread in the word2vec Google group that he gets error rates of 9.4\% to 10\% \citep{mikolov_distributed_2014} . This higher result can be achieved if we use negative sampling instead of hierarchical softmax, and if the test documents are included in the training set instead of their vectors being inferred \citep{mohr_gensim_2017}, however this strays somewhat from the model as described in the paper.
 
-In the following sections, we give a detailed description of our interpretation of the \texttt{doc2vec} models, any ambiguities in the paper which slowed down own implementation, and a report of how we managed to implement the model.
+In the following sections, we give a detailed description of our interpretation of the \texttt{doc2vec} models, any ambiguities in the paper which slowed down our implementation, and a report of how we managed to implement the model.
 
 \section{Models}
 The idea of \texttt{doc2vec} is to predict all the words within a document, given an input vector which contains the document embedding. The hope is that the information from the document embedding can be used to predict its words well, so that the document embedding can capture some meaning in the document. We first describe the \texttt{doc2vec} model for an arbitrary input vector $u_{d,t}$, which depends on the document $d$ and output word position $t$, then show what $u_{d,t}$ is respectively for \texttt{pv-dm} and \texttt{dbow}.
