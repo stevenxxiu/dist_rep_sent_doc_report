@@ -118,7 +118,7 @@ The process of hyperparameter tuning was performed via random search. Our search
     window size             & 5, ..., 12 \\
     embedding size          & 50, 100, 150, ..., 400 \\
     min freq                & 0, ..., 5 \\
-    sample                  & 1, \SI{1e-1}, ..., \SI{1e-5} \\
+    sample                  & 1, \num{1e-1}, ..., \num{1e-5} \\
     train learning rate     & 0.1, 0.05, 0.025, 0.01, ..., 0.0001 \\
     inference learning rate & 0.1, 0.05, 0.025, 0.01, ..., 0.0001 \\
     train epoch size        & 1, ..., 50 \\
@@ -137,11 +137,11 @@ The non-concatenated results are in \autoref{table:doc_emb}. We can see that the
 \begin{tabular}{|l|l|l|l|l|l|l|r|}
     \hline
     Method & Embedding size & \specialcell{Frequent word \\ sub-sampling} & \specialcell{Target word \\ location} & Window size & Error rate \\ \hline
-    pvdm concat & 100 & gensim \SI{1e-3} & middle & 10 & 0.20672 \\
-    pvdm concat & 100 & none             & end    & 9  & 0.20108 \\
-    pvdm concat & 100 & w2v \SI{1e-3}    & middle & 10 & 0.19820 \\
-    pvdm concat & 100 & w2v \SI{1e-3}    & end    & 9  & 0.15684 \\
-    dbow        & 100 & w2v \SI{1e-3}    & -      & -  & \textBF{0.11744} \\
+    pvdm concat & 100 & gensim \num{1e-3} & middle & 10 & 0.20672 \\
+    pvdm concat & 100 & none              & end    & 9  & 0.20108 \\
+    pvdm concat & 100 & w2v \num{1e-3}    & middle & 10 & 0.19820 \\
+    pvdm concat & 100 & w2v \num{1e-3}    & end    & 9  & 0.15684 \\
+    dbow        & 100 & w2v \num{1e-3}    & -      & -  & \textBF{0.11744} \\
     \hline
 \end{tabular}
 \caption{\texttt{pv-dm} and \texttt{dbow} results for logistic regression classification. All results use a learning rate of $0.001$, a batch size of $2048$, $20$ training epochs and $10$ inference epochs. Some \texttt{gensim} modifications we experimented with are also included for comparison.}
