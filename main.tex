@@ -101,7 +101,33 @@ It is not described how unknown words during validation are handled. We followed
 The method of inference is described, but is rather brief. In more detail, our optimization setup was identical for training and inference phases, with identical learning rates. We still randomly initialize and update the test document vectors in the same way as the training phase, but all other parameters are copied from the end of the training phase and kept fixed.
 
 \subsection{Techniques only mentioned in the \texttt{word2vec} paper}
-Another technique we found to be useful that was only mentioned in the \texttt{word2vec} paper was frequent word sub-sampling. For each epoch, this preprocessed each document first by supposing the probability of a word being included in the document in \texttt{word2vec} is $P(w)=\max\{(t/f(w))^{1/2}, 1\}$, where $f(w)$ is the empirical probability of the word ${w}$ in the training set, and $t$ is some chosen threshold. Windows are then extracted from the documents in a separate pass. The idea is that frequent words may provide less information value than rarer words, but contribute disproportionately to the loss function, thus resulting in less good word vectors for infrequent words. We found this to be useful for both the \texttt{pv-dm} and \texttt{dbow} models.
+Another technique we found to be useful that was only mentioned in the \texttt{word2vec} paper was frequent word sub-sampling. For each epoch, this preprocessed each document first by supposing the probability of a word $w$ being included in the document is $\max\{(t/f(w))^{1/2}, 1\}$, where $f(w)$ is the empirical probability of the word ${w}$ in the training set, and $t$ is some chosen threshold. Windows are then extracted from the documents in a separate pass. The idea is that frequent words may provide less information value than rarer words, but contribute disproportionately to the loss function, thus resulting in less good word vectors for infrequent words. We found this to be useful for both the \texttt{pv-dm} and \texttt{dbow} models.
+
+\subsection{Hyperparameter tuning}
+We tuned out own hyperparameters, since some hyperparameters such as the number of epochs were missing from the paper, and in addition we used frequent word sub-sampling.
+
+The \texttt{imdb} dataset does not include a validation set. We constructed our validation set similarly to how the test set was constructed. In order for classes to remain balanced, we took 20\% of the positive and negative training examples. In order to avoid performance improvements from memorizing rare movie-unique terms and their associated labels from the training set, we ensure that the validation and training sets have no movie in common \citep{maas-EtAl:2011:ACL-HLT2011}. This resulted in us taking the first $10004$ positive and first $10001$ reviews out of $12500$ from the positive and negative classes respectively.
+
+The process of hyperparameter tuning was performed via random search. Our search space is detailed in \autoref{table:hyper}. We then rounded our epoch size off to a multiple of $10$ since it didn't make a significant difference.
+
+\begin{table}[htbp]\centering
+\setlength\tabcolsep{2pt}
+\begin{tabular}{|l|l|}
+    \hline
+    Parameter               & Search space \\ \hline
+    window size             & 5, ..., 12 \\
+    embedding size          & 50, 100, 150, ..., 400 \\
+    min freq                & 0, ..., 5 \\
+    sample                  & 1, \SI{1e-1}, ..., \SI{1e-5} \\
+    train learning rate     & 0.1, 0.05, 0.025, 0.01, ..., 0.0001 \\
+    inference learning rate & 0.1, 0.05, 0.025, 0.01, ..., 0.0001 \\
+    train epoch size        & 1, ..., 50 \\
+    inference epoch size    & 1, ..., 50 \\
+    \hline
+\end{tabular}
+\caption{Hyperparameter search spaces.}
+\label{table:hyper}
+\end{table}
 
 \subsection{Results}
 The non-concatenated results are in \autoref{table:doc_emb}. We can see that the \texttt{dbow} model performs best, and that $100$-dimensional embeddings are good enough and superior to $400$-dimensional embeddings. In \autoref{table:classification}, we find that neural nets do not help in this case, and logistic regression is sufficient. Additionally, we see that \texttt{dbow} alone is better than concatenating \texttt{dbow} and \texttt{pv-dm} document vectors. This makes some sense in that we do not expect a model to contribute much information to the base model if it performs worse. Here \texttt{pv-dm} is \texttt{dbow} with the additional context of words in each window.
@@ -110,37 +136,29 @@ The non-concatenated results are in \autoref{table:doc_emb}. We can see that the
 \setlength\tabcolsep{2pt}
 \begin{tabular}{|l|l|l|l|l|l|l|r|}
     \hline
-    Method & Embedding size & \specialcell{Frequent word \\ sub-sampling} & \specialcell{Target word \\ location} & Window size & Train epochs & Val epochs & Error rate \\ \hline
-    pvdm & 100 & none             & middle & 10 & 20  & 10  & 0.24924 \\
-    pvdm & 100 & gensim \SI{1e-3} & middle & 10 & 20  & 10  & 0.20672 \\
-    pvdm & 100 & w2v \SI{1e-3}    & middle & 10 & 20  & 10  & 0.19820 \\
-    pvdm & 100 & none             & end    & 9  & 20  & 10  & 0.20108 \\
-    pvdm & 100 & w2v \SI{1e-3}    & end    & 9  & 20  & 10  & 0.15684 \\
-    pvdm & 100 & w2v \SI{1e-3}    & end    & 9  & 100 & 100 & 0.16920 \\
-    pvdm & 400 & w2v \SI{1e-3}    & end    & 9  & 100 & 100 & 0.29400 \\
-    dbow & 100 & none             & -      & -  & 20  & 10  & 0.11916 \\
-    dbow & 100 & none             & -      & -  & 100 & 100 & 0.13272 \\
-    dbow & 100 & w2v \SI{1e-3}    & -      & -  & 20  & 10  & \textBF{0.11744} \\
-    dbow & 400 & w2v \SI{1e-3}    & -      & -  & 20  & 10  & 0.12568 \\
+    Method & Embedding size & \specialcell{Frequent word \\ sub-sampling} & \specialcell{Target word \\ location} & Window size & Error rate \\ \hline
+    pvdm concat & 100 & gensim \SI{1e-3} & middle & 10 & 0.20672 \\
+    pvdm concat & 100 & none             & end    & 9  & 0.20108 \\
+    pvdm concat & 100 & w2v \SI{1e-3}    & middle & 10 & 0.19820 \\
+    pvdm concat & 100 & w2v \SI{1e-3}    & end    & 9  & 0.15684 \\
+    dbow        & 100 & w2v \SI{1e-3}    & -      & -  & \textBF{0.11744} \\
     \hline
 \end{tabular}
-\caption{\texttt{pv-dm} and \texttt{dbow} results for logistic regression classification. All results use a learning rate of $0.001$, and a batch size of $2048$.}
+\caption{\texttt{pv-dm} and \texttt{dbow} results for logistic regression classification. All results use a learning rate of $0.001$, a batch size of $2048$, $20$ training epochs and $10$ inference epochs. Some \texttt{gensim} modifications we experimented with are also included for comparison.}
 \label{table:doc_emb}
 \end{table}
 
 \begin{table}[htbp]\centering
 \begin{tabular}{|l|l|l|r|}
     \hline
-    Method     & Layer sizes & Doc vecs  & Error rate \\ \hline
-    logreg     & -           & pvdm      & 0.19820 \\
-    logreg     & -           & dbow      & \textBF{0.11916}    \\
-    logreg     & -           & dbow+pvdm & 0.12092 \\
-    neural net & 50          & dbow+pvdm & 0.12072 \\
-    neural net & 25          & dbow+pvdm & 0.12056 \\
-    neural net & 10          & dbow+pvdm & 0.12092 \\
+    Method     & Layer sizes & Doc vecs         & Error rate \\ \hline
+    logreg     & -           & pvdm             & 0.19820 \\
+    logreg     & -           & dbow             & \textBF{0.11744}    \\
+    logreg     & -           & dbow+pvdm concat & 0.12092 \\
+    neural net & 25          & dbow+pvdm concat & 0.12056 \\
     \hline
 \end{tabular}
-\caption{Classification results for logistic regression vs neural nets. All results use a learning rate of $0.1$, $30$ epochs, and a batch size of $2048$.}
+\caption{Classification results for logistic regression vs neural nets. All results use a learning rate of $0.01$, $30$ epochs, and a batch size of $2048$.}
 \label{table:classification}
 \end{table}
 
@@ -159,11 +177,11 @@ Besides the slightly different setup in the \texttt{gensim} notebook, the \textt
 
 There is the option to remove infrequent words. Words below a frequency threshold are excluded as if they were not in the document at all, during training and inference.
 
-It alters the frequent word subsampling formula. The probability of a word being included in the document in \texttt{word2vec} is $P(w)=\max\{(t/f(w))^{1/2}, 1\}$. The altered formula is $P(w)=\max\{(t/f(w))^{1/2} + {t/f(w)}, 1\}$. Since for most words $t/f(w)\approx 0$, the difference between the two formulas are not great. We tried the altered formula but obtained a slightly better result using the original.
+It alters the frequent word subsampling formula. The probability of a word being included in the document in \texttt{word2vec} is $P(w)=\max\{(t/f(w))^{1/2}, 1\}$. The altered formula is $P(w)=\max\{(t/f(w))^{1/2} + {t/f(w)}, 1\}$. Since for most words $t/f(w)\approx 0$, the difference between the two formulas are not great. We tried the altered formula but obtained a slightly better result using the original (\autoref{table:doc_emb}).
 
-The \texttt{pv-dm} average model does not always uses the full window size and uses a randomly selected reduced size, we did not use this model.
+Reduced window sampling, where instead of using $c$, we use $c'\sim\mathcal{U}\{0,c\}$. This is used in in the \texttt{pv-dm} average model and in the \texttt{dbow} model where skip-gram is used. This was not used in the \texttt{pv-dm} concat model, presumably because the model required $u_{d,t}$ to have fixed in dimension. We did not experiment with this due to it not being mentioned in either paper.
 
-The \texttt{pv-dm} model predicts the center word instead of last word, similar to the \texttt{word2vec} skip-gram model. The window sizes on the left and right are required to be the same. We found that predicting the end word gave better results, while the word embeddings are subjectively similarly good.
+The \texttt{pv-dm} model predicts the center word instead of last word, similar to the \texttt{word2vec} skip-gram model. The window sizes on the left and right are required to be the same. We found that predicting the end word gave better results, while the word embeddings are subjectively similarly good (\autoref{table:doc_emb}).
 
 \texttt{gensim} does not use mini-batching. In order to make use of parallelism, the documents are first shuffled then queued, each training thread takes a document from the queue, and trains on all windows for a single document from left to right. The threads read and update the weights without any form of synchronization. If we assume that all threads run at identical speed and start at identical times, i.e. at each time step, $n$ threads read the parameters, then compute the updates, then update the parameters through atomic vector addition, this is equivalent to mini-batching with a batch size of $n$, with summed loss. Examples in the mini-batch are the same as in the case of \texttt{gensim}'s threads, note that it always contains windows from different documents.
 
