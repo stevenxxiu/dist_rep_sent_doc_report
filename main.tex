@@ -32,10 +32,12 @@
 \maketitle
 
 \begin{abstract}
-We attempted to reproduce the results of the paper ``Distributed Representations of Sentences and Documents'' for the imdb sentiment analysis dataset, using \texttt{tensorflow}. We could not obtain the paper's claim of an 7.42\% error rate, and instead we managed 11.74\%. This is however very close to the results of \texttt{gensim}, another implementation of the paper, in a similar setting, which gives an error rate of 12.04\%.
+Neural network models can be difficult to reproduce due to its many hyperparameters, initialization and training details. We attempted to reproduce the results of a paper ``Distributed Representations of Sentences and Documents'' for the imdb sentiment analysis dataset, using \texttt{tensorflow}. We could not obtain the paper's claim of an 7.42\% error rate, and instead we managed 11.74\%. This is however very close to the results of \texttt{gensim}, another implementation of the paper, in a similar setting, which gives an error rate of 12.04\%.
 \end{abstract}
 
 \section{Introduction}
+The recent resurgence in AI is in large part due to the many successful neural network models. These models often have many hyperparameters, and can be initialized and trained in multiple ways. However, the focus on many papers has been just the model itself, with a minimal or neglected description of the details, possibly due to the fact that different initilization and training schemes can still achieve similar results. Hence it is useful to investigate whether we can reproduce neural network papers using its description alone, and if not, what can be done to improve reproducibility.
+
 \texttt{word2vec} \citep{mikolov_distributed_2013} was one of the first papers in which words were successfully represented as dense embedding vectors of fixed size. The model was simple -- a sliding window was used on both sides of a central word to predict it. As to be expected, words with similar meaning were found to be grouped together in the vector space since they will predict similar words. Intriguingly, there was also meaning in the addition and subtraction of vectors, where \textit{man - woman + king $\approx$ queen}. \cite{arora_rand-walk:_2015} have come up with a theoretical explanation for this phenomena.
 
 As an extension of the methods used in \texttt{word2vec} to documents, \texttt{doc2vec} \citep{le_distributed_2014} introduced 2 models. One, \texttt{pv-dm}, uses a concatenated or averaged vector of the document embedding plus all the embeddings of words in the output word's context to predict the output word. In contrast to \texttt{word2vec}, the conditional includes the entire context (and document) instead of just the words in the context alone. Another, \texttt{dbow}, uses the document embedding only so does not require contexts nor does it give word embeddings.
@@ -82,7 +84,7 @@ For the classification network, the neural network is not very well described. W
 \section{Experimental results}
 In our reproduction of the original methods of the paper, we could not reproduce the paper's claim of an 7.42\% error rate, and instead we managed 11.74\%. Under a similar setting, using another implementation, \texttt{gensim} \citep{rehurek_software_2010}, we arrived at a similar error rate of 12.04\%.\footnote{Details regarding \texttt{gensim} are in \autoref{sec:gensim}.}
 
-We initially did not succeed in getting an error rate above 50\%, so we used \texttt{gensim}'s source code for guidance. The key changes which allowed us to do so included proper initialization of the weights, and using the summed loss in each mini-batch instead of the mean.
+We initially did not succeed in getting an error rate above 50\%, so we used \texttt{gensim}'s source code for guidance. The key changes which allowed us to do so included good initialization of the weights as described below, and using the summed loss in each mini-batch instead of the mean.
 
 \subsection{Ambiguities common to most neural network papers}
 There are some underspecified parts of the model which are also common to most neural network papers. In particular, the random initializations of the parameters, here word embedding and softmax weights are not specified. We found that these were quite important to the model, as our initial attempts did not work. Using the initializations of \texttt{gensim}, that of $U(-1/d, 1/d)^d$ for word embeddings for embedding dimension size $d$ and $0$ for the hierarchical softmax weights worked.
