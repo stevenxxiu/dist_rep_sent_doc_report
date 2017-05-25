@@ -132,7 +132,7 @@ The process of hyperparameter tuning was performed via random search. Our search
 \end{table}
 
 \subsection{Results}
-The non-concatenated results are in \autoref{table:doc_emb}. We can see that the \texttt{dbow} model performs best, and that $100$-dimensional embeddings are good enough and superior to $400$-dimensional embeddings. In \autoref{table:classification}, we find that neural nets do not help in this case due to overfitting, and logistic regression is sufficient. Additionally, we see that \texttt{dbow} alone is better than concatenating \texttt{dbow} and \texttt{pvdm} document vectors. This makes some sense in that we do not expect a model to contribute much information to the base model if it performs worse. Here \texttt{pvdm} is \texttt{dbow} with the additional context of words in each window.
+The non-concatenated results are in \autoref{table:doc_emb}. We can see that the \texttt{dbow} model performs best, concat and mean perform similarly, and that different methods have very different embedding sizes, perhaps due to data size limitations. In \autoref{table:classification}, we find that neural nets do not help due to overfitting, and logistic regression is sufficient. Additionally, we see that \texttt{dbow} alone is better than any form of concatenation. This makes some sense when we view \texttt{pvdm} as an extension to the \texttt{dbow} model, with the additional context of words in each window.
 
 \begin{table}[htbp]\centering
 \setlength\tabcolsep{2pt}
