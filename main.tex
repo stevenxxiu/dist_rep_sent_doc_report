@@ -189,6 +189,8 @@ Reduced window sampling, where instead of using $c$, we use $c'\sim\mathcal{U}\{
 
 The \texttt{pvdm} model predicts the center word instead of last word, similar to the \texttt{word2vec} skip-gram model. The window sizes on the left and right are required to be the same. We found that predicting the end word gave better results, while the word embeddings are subjectively similarly good.
 
+The \texttt{pvdm} average model has no pre-padding of \texttt{null} words, although it is not clear whether the original paper did this or not. We performed pre-padding.
+
 \texttt{gensim} does not use mini-batching. In order to make use of parallelism, the documents are first shuffled then queued, each training thread takes a document from the queue, and trains on all windows for a single document from left to right. The threads read and update the weights without any form of synchronization. If we assume that all threads run at identical speed and start at identical times, i.e. at each time step, $n$ threads read the parameters, then compute the updates, then update the parameters through atomic vector addition, this is equivalent to mini-batching with a batch size of $n$, with summed loss. Examples in the mini-batch are the same as in the case of \texttt{gensim}'s threads, note that it always contains windows from different documents.
 
 \end{appendices}
