@@ -169,7 +169,7 @@ The non-concatenated results are in \autoref{table:doc_emb}. We can see that the
 \end{table}
 
 \section{Conclusion}
-We have described the process in which we attempted to reproduce the paper ``Distributed Representations of Sentences and Documents''. The main difficulties we encountered included the unclear or ommitted description of the initialization of neural network weights, objective where multiple batches were involved, an ambiguous description of the model which can be interpreted in 2 ways, and the sampling process used to generate each training example. We hope that our findings can guide future paper authors in the area of deep learning to describe their models in a clearer fashion so that they are more easily reproducible.
+We have described the process in which we attempted to reproduce the paper ``Distributed Representations of Sentences and Documents''. The main difficulties we encountered included the ommitted description of the initialization of neural network weights, objective where multiple batches are involved, the gradient descent specifics, and techniques from \texttt{word2vec} which gave a significant improvement to the results but were probably ommitted from the paper. We hope that our findings can guide future paper authors in the area of deep learning to describe their models in a clearer fashion so that they are more easily reproducible.
 
 \begin{appendices}
 \section{\texttt{gensim}} \label{sec:gensim}
