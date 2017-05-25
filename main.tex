@@ -98,7 +98,7 @@ However, stochastic gradient descent still appeared to cause some rare parameter
 
 What the context window size, $c$ actually is can be missed. It might be unclear from the start, but in the later sections the paper states ``To predict the 10-th word, we concatenate the paragraph vectors and word vectors'', so in the IMDB case, $c=9$.
 
-It is not described how unknown words during validation are handled. We followed \texttt{gensim} in omitting unknown and words below a frequency threshold from the document entirely. We chose this to be $2$, since words appearing once are unlikely to give much information and increase training time.
+It is not described how unknown words during validation are handled. We followed \texttt{gensim} in omitting unknown and words below a frequency threshold from the document entirely, to reduce memory consumption.
 
 The method of inference is described, but is rather brief. In more detail, our optimization setup was identical for training and inference phases, with identical learning rates. We still randomly initialize and update the test document vectors in the same way as the training phase, but all other parameters are copied from the end of the training phase and kept fixed.
 
@@ -181,7 +181,7 @@ We use a slightly different setup to the example \texttt{gensim} notebook \citep
 \subsection{Differences in \texttt{gensim}}
 Besides the slightly different setup in the \texttt{gensim} notebook, the \texttt{gensim} model implementation itself also presents some differences not mentioned in any paper.
 
-There is the option to remove infrequent words. Words below a frequency threshold are excluded as if they were not in the document at all, during training and inference.
+There is the option to remove infrequent words. Words below a frequency threshold are excluded as if they were not in the document at all, during training and inference. We used this to reduce memory consumption.
 
 It alters the frequent word subsampling formula. The probability of a word being included in the document in \texttt{word2vec} is $P(w)=\max\{(t/f(w))^{1/2}, 1\}$. The altered formula is $P(w)=\max\{(t/f(w))^{1/2} + {t/f(w)}, 1\}$. Since for most words $t/f(w)\approx 0$, the difference between the two formulas are not great. We tried the altered formula but did not obtain better results than using the original.
 
