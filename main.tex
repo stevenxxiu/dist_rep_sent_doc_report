@@ -32,7 +32,7 @@
 \maketitle
 
 \begin{abstract}
-Neural network models can be difficult to reproduce due to its many hyperparameters, initialization and training details. We attempted to reproduce the results of a paper ``Distributed Representations of Sentences and Documents'' for the imdb sentiment analysis dataset, using \texttt{tensorflow}. We could not obtain the paper's claim of an 7.42\% error rate, and instead we managed 11.60\%. This is however very close to the results of \texttt{gensim}, another implementation of the paper, in a similar setting, which gives an error rate of 12.04\%.
+Neural network models can be difficult to reproduce due to its many hyperparameters, initialization and training details. We attempted to reproduce the results of a paper ``Distributed Representations of Sentences and Documents'' for the imdb sentiment analysis dataset, using \texttt{tensorflow}. We could not obtain the paper's claim of an 7.42\% error rate, and instead we managed 11.59\%. This is however very close to the results of \texttt{gensim}, another implementation of the paper, in a similar setting, which gives an error rate of 12.04\%.
 \end{abstract}
 
 \section{Introduction}
@@ -42,7 +42,7 @@ The recent resurgence in AI is in large part due to the many successful neural n
 
 As an extension of the methods used in \texttt{word2vec} to documents, \texttt{doc2vec} \citep{le_distributed_2014} introduced 2 models. One, \texttt{pvdm}, uses a concatenated or averaged vector of the document embedding plus all the embeddings of words in the output word's context to predict the output word. In contrast to \texttt{word2vec}, the conditional includes the entire context (and document) instead of just the words in the context alone. Another, \texttt{dbow}, uses the document embedding only so does not require contexts nor does it give word embeddings.
 
-Despite the document vectors not being trained on sentiment information, \cite{le_distributed_2014} report that their model was able to achieve a state-of-the-art result of a 7.42\% error rate. However, we could only produce an error rate of 11.60\%.\footnote{Our source code is available at \url{https://github.com/stevenxxiu/dist_rep_sent_doc/}.} This does not beat the best model listed for comparison, which achieves an error rate of 8.78\%.
+Despite the document vectors not being trained on sentiment information, \cite{le_distributed_2014} report that their model was able to achieve a state-of-the-art result of a 7.42\% error rate. However, we could only produce an error rate of 11.59\%.\footnote{Our source code is available at \url{https://github.com/stevenxxiu/dist_rep_sent_doc/}.} This does not beat the best model listed for comparison, which achieves an error rate of 8.78\%.
 
 Of worth noting is that the second author of the paper, Tomas Mikolov, also thinks that the paper is unreproducible, commenting in a thread in the word2vec Google group that he gets error rates of 9.4\% to 10\% \citep{mikolov_distributed_2014} . This higher result can be achieved if we use negative sampling instead of hierarchical softmax, and if the test documents are included in the training set instead of their vectors being inferred \citep{mohr_gensim_2017}, however this strays somewhat from the model as described in the paper.
 
@@ -82,7 +82,7 @@ In our case we just assume that it is a sum for simplicity.
 For the classification network, the neural network is not very well described. We assume it is the most common neural network, with dense layers with ReLU activation units, and a final softmax classification layer including biases, and do not introduce any regularization.
 
 \section{Experimental results}
-In our reproduction of the original methods of the paper, we could not reproduce the paper's claim of an 7.42\% error rate, and instead we managed 11.60\%. Under a similar setting, using another implementation, \texttt{gensim} \citep{rehurek_software_2010}, under their tuned hyperparameters we arrived at a similar error rate of 12.04\%.\footnote{Details regarding \texttt{gensim} are in \autoref{sec:gensim}.}
+In our reproduction of the original methods of the paper, we could not reproduce the paper's claim of an 7.42\% error rate, and instead we managed 11.59\%. Under a similar setting, using another implementation, \texttt{gensim} \citep{rehurek_software_2010}, under their tuned hyperparameters we arrived at a similar error rate of 12.04\%.\footnote{Details regarding \texttt{gensim} are in \autoref{sec:gensim}.}
 
 We initially did not succeed in getting an error rate above 50\%, so we used \texttt{gensim}'s source code for guidance. The key changes which allowed us to do so included good initialization of the weights as described below, and using the summed loss in each mini-batch instead of the mean.
 
@@ -118,13 +118,13 @@ The process of hyperparameter tuning was performed via random search. Our search
     \hline
     Parameter               & Search space \\ \hline
     Embedding size          & 50, 100, 150, ..., 400 \\
-    Window size             & 5, ..., 12 \\
-    Min freq                & 0, ..., 5 \\
-    Freq word sub-sample    & 1, \num{1e-1}, ..., \num{1e-5} \\
+    Window size             & 5, 6, 7, ..., 12 \\
+    Min freq                & 0, 1, 2, ..., 5 \\
+    Freq word sub-sample    & 1, \num{1e-1}, \num{1e-2}, ..., \num{1e-5} \\
     Train LR                & 0.1, 0.05, 0.025, 0.01, ..., 0.0001 \\
     Inference LR            & 0.1, 0.05, 0.025, 0.01, ..., 0.0001 \\
-    Train epoch size        & 1, ..., 50 \\
-    Inference epoch size    & 1, ..., 50 \\
+    Train epoch size        & 1, 2, 3, ..., 50 \\
+    Inference epoch size    & 1, 2, 3, ..., 50 \\
     \hline
 \end{tabular}
 \caption{Hyperparameter search spaces.}
@@ -139,12 +139,12 @@ The non-concatenated results are in \autoref{table:doc_emb}. We can see that the
 \begin{tabular}{|l|r|r|r|r|r|r|r|r|r|}
     \hline
     Method & \specialcell{Embedding \\ size} & \specialcell{Minimum \\ word freq} & \specialcell{Freq word \\ sub-sample} & \specialcell{Window \\size} & \specialcell{Train \\ LR} & \specialcell{Inference \\ LR} & \specialcell{Train \\ epochs} & \specialcell{Inference \\ epochs} & \specialcell{Error rate} \\ \hline
-    pvdm concat & 50  & 2 & \num{1e-3} & 7 & 0.0005 & 0.00025 & 46 & 42 & 0.152640 \\
-    pvdm mean   & 150 & 4 & \num{1e-3} & 8 & 0.0025 & 0.0001  & 26 & 49 & 0.153320 \\
-    dbow        & 400 & 0 & \num{1e-1} & - & 0.001  & 0.0001  & 12 & 18 & \textBF{0.115960} \\
+    pvdm concat & 50  & 2 & \num{1e-3} & 7 & 0.0005 & 0.00025 & 46 & 42 & 0.152280 \\
+    pvdm mean   & 150 & 4 & \num{1e-3} & 8 & 0.0025 & 0.0001  & 26 & 49 & 0.152520 \\
+    dbow        & 400 & 0 & \num{1e-1} & - & 0.001  & 0.0001  & 12 & 18 & \textBF{0.115880} \\
     \hline
 \end{tabular}
-\caption{\texttt{pvdm} and \texttt{dbow} results for logistic regression classification. All results used a batch size of $2048$. Logistic regression had a learning rate of $0.01$ with Adam's default settings, a batch size of $2048$, and $100$ epochs. We took the result of the last epoch. Some \texttt{gensim} modifications we experimented with are also included for comparison.}
+\caption{\texttt{pvdm} and \texttt{dbow} results for logistic regression classification. All results used a batch size of $2048$. Logistic regression had a learning rate of $0.01$ with Adam's default settings, a batch size of $2048$, and $100$ epochs. We took the result of the epoch with the best validation results. Some \texttt{gensim} modifications we experimented with are also included for comparison.}
 \label{table:doc_emb}
 \end{table}
 
@@ -152,19 +152,19 @@ The non-concatenated results are in \autoref{table:doc_emb}. We can see that the
 \begin{tabular}{|l|l|r|r|}
     \hline
     Method     & Document vectors               & Layer sizes & Error rate \\ \hline
-    logreg     & pvdm concat                    & -           & 0.152640 \\
-    logreg     & pvdm mean                      & -           & 0.153320 \\
-    logreg     & dbow                           & -           & \textBF{0.115960} \\
-    logreg     & pvdm concat + pvdm mean        & -           & 0.146920 \\
-    logreg     & pvdm concat + dbow             & -           & 0.125160 \\
-    logreg     & pvdm mean + dbow               & -           & 0.118200 \\
-    logreg     & pvdm concat + pvdm mean + dbow & -           & 0.128240 \\
-    neural net & pvdm concat                    & 10          & 0.152400 \\
-    neural net & pvdm mean                      & 4           & 0.256000 \\
-    neural net & dbow                           & 200         & 0.149360 \\
+    logreg     & pvdm concat                    & -           & 0.152280 \\
+    logreg     & pvdm mean                      & -           & 0.152520 \\
+    logreg     & dbow                           & -           & \textBF{0.115880} \\
+    logreg     & pvdm concat + pvdm mean        & -           & 0.143640 \\
+    logreg     & pvdm concat + dbow             & -           & 0.119440 \\
+    logreg     & pvdm mean + dbow               & -           & 0.117920 \\
+    logreg     & pvdm concat + pvdm mean + dbow & -           & 0.120480 \\
+    neural net & pvdm concat                    & 10          & 0.151040 \\
+    neural net & pvdm mean                      & 6           & 0.285720 \\
+    neural net & dbow                           & 30          & 0.125000 \\
     \hline
 \end{tabular}
-\caption{Classification results comparing modes of concatenation, and logistic regression vs neural nets. Training had a learning rate of $0.01$ with Adam's default settings, a batch size of $2048$, and $100$ epochs.}
+\caption{Classification results comparing modes of concatenation, and logistic regression vs neural nets. Training had a learning rate of $0.01$ with Adam's default settings, a batch size of $2048$, and $100$ epochs. The neural net layer size search was performed over $2, 3, 4, ..., 10, 20, 30, ...$ until the embedding size. We took the result of the epoch with the best validation results.}
 \label{table:classification}
 \end{table}
 
