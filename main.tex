@@ -79,10 +79,12 @@ The overall objective is not described in the original paper. Usually it is the 
     \[\sum_{d\in\mathcal{D}}\frac{1}{T_d}\sum_{t=1}^{T_d} \log p(w_{d_t}|u_{d,t})\]
 In our case we just assume that it is a sum for simplicity.
 
+We also assume that the batch loss is then the loss restricted to instances within the batch.
+
 For the classification network, the neural network is not very well described. We assume it is the most common neural network, with dense layers with ReLU activation units, and a final softmax classification layer including biases, and do not introduce any regularization.
 
 \section{Experimental results}
-In our reproduction of the original methods of the paper, we could not reproduce the paper's claim of an 7.42\% error rate, and instead we managed 11.59\%. Under a similar setting, using another implementation, \texttt{gensim} \citep{rehurek_software_2010}, under their tuned hyperparameters we arrived at a similar error rate of 12.04\%.\footnote{Details regarding \texttt{gensim} are in \autoref{sec:gensim}.}
+In our reproduction of the paper, we could not reproduce the paper's claim of an 7.42\% error rate, and instead we managed 11.59\% with some additional tricks that are possibly used in the paper. Under a similar setting, using another implementation, \texttt{gensim} \citep{rehurek_software_2010}, under their tuned hyperparameters we arrived at a similar error rate of 12.04\%.\footnote{Details regarding \texttt{gensim} are in \autoref{sec:gensim}.}
 
 We initially did not succeed in getting an error rate above 50\%, so we used \texttt{gensim}'s source code for guidance. The key changes which allowed us to do so included good initialization of the weights as described below, and using the summed loss in each mini-batch instead of the mean.
 
