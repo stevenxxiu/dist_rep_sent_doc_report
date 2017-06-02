@@ -32,7 +32,7 @@
 \maketitle
 
 \begin{abstract}
-Neural network models can be difficult to reproduce due to its many hyperparameters, initialization and training details. We attempted to reproduce the results of a paper ``Distributed Representations of Sentences and Documents'' for the imdb sentiment analysis dataset, using \texttt{tensorflow}. We could not obtain the paper's claim of an 7.42\% error rate, and instead we managed 11.59\%. This is however very close to the results of \texttt{gensim}, another implementation of the paper, in a similar setting, which gives an error rate of 12.04\%.
+Neural network models can be difficult to reproduce due to its many hyperparameters, initialization and training details. We attempted to reproduce the results of a paper ``Distributed Representations of Sentences and Documents'' for the imdb sentiment analysis dataset, using \texttt{tensorflow}. We could not obtain the paper's claim of an 7.42\% error rate, and instead we managed 11.59\%. This is however close to the results of \texttt{gensim}, another implementation of the paper, which gives an error rate of 12.04\% under a similar setting. However, by jointly training skip-gram we obtained slightly better results of 11.30\%.
 \end{abstract}
 
 \section{Introduction}
@@ -84,7 +84,7 @@ We also assume that the batch loss is then the loss restricted to instances with
 For the classification network, the neural network is not very well described. We assume it is the most common neural network, with dense layers with ReLU activation units, and a final softmax classification layer including biases, and do not introduce any regularization.
 
 \section{Experimental results}
-In our reproduction of the paper, we could not reproduce the paper's claim of an 7.42\% error rate, and instead we managed 11.59\% with some additional tricks that are possibly used in the paper. Under a similar setting, using another implementation, \texttt{gensim} \citep{rehurek_software_2010}, under their tuned hyperparameters we arrived at a similar error rate of 12.04\%.\footnote{Details regarding \texttt{gensim} are in \autoref{sec:gensim}.}
+In our reproduction of the paper, we could not reproduce the paper's claim of an 7.42\% error rate, and instead we managed 11.59\% with some additional tricks that are possibly used in the paper. Using another implementation, \texttt{gensim} \citep{rehurek_software_2010}, under their tuned hyperparameters, we arrived at a similar error rate of 12.04\%.\footnote{Details regarding \texttt{gensim} are in \autoref{sec:gensim}.}
 
 We initially did not succeed in getting an error rate above 50\%, so we used \texttt{gensim}'s source code for guidance. The key changes which allowed us to do so included good initialization of the weights as described below, and using the summed loss in each mini-batch instead of the mean.
 
@@ -141,9 +141,10 @@ The non-concatenated results are in \autoref{table:doc_emb}. We can see that the
 \begin{tabular}{|l|r|r|r|r|r|r|r|r|r|}
     \hline
     Method & \specialcell{Embedding \\ size} & \specialcell{Minimum \\ word freq} & \specialcell{Freq word \\ sub-sample} & \specialcell{Window \\size} & \specialcell{Train \\ LR} & \specialcell{Inference \\ LR} & \specialcell{Train \\ epochs} & \specialcell{Inference \\ epochs} & \specialcell{Error rate} \\ \hline
-    pvdm concat & 50  & 2 & \num{1e-3} & 7 & 0.0005 & 0.00025 & 46 & 42 & 0.152280 \\
-    pvdm mean   & 150 & 4 & \num{1e-3} & 8 & 0.0025 & 0.0001  & 26 & 49 & 0.152520 \\
-    dbow        & 400 & 0 & \num{1e-1} & - & 0.001  & 0.0001  & 12 & 18 & \textBF{0.115880} \\
+    pvdm concat & 50  & 2 & \num{1e-3} & 7  & 0.0005 & 0.00025 & 46 & 42 & 0.152280 \\
+    pvdm mean   & 150 & 4 & \num{1e-3} & 8  & 0.0025 & 0.0001  & 26 & 49 & 0.152520 \\
+    dbow        & 400 & 0 & \num{1e-1} & -  & 0.001  & 0.0001  & 12 & 18 & 0.115880 \\
+    dbow sg     & 400 & 2 & \num{1}    & 12 & 0.0005 & 0.0001  & 34 & 29 & \textBF{0.112960} \\
     \hline
 \end{tabular}
 \caption{\texttt{pvdm} and \texttt{dbow} results for logistic regression classification. All results used a batch size of $2048$. Logistic regression had a learning rate of $0.01$ with Adam's default settings, a batch size of $2048$, and $100$ epochs. We took the result of the epoch with the best validation results. Some \texttt{gensim} modifications we experimented with are also included for comparison.}
@@ -156,7 +157,8 @@ The non-concatenated results are in \autoref{table:doc_emb}. We can see that the
     Method     & Document vectors               & Layer sizes & Error rate \\ \hline
     logreg     & pvdm concat                    & -           & 0.152280 \\
     logreg     & pvdm mean                      & -           & 0.152520 \\
-    logreg     & dbow                           & -           & \textBF{0.115880} \\
+    logreg     & dbow                           & -           & 0.115880 \\
+    logreg     & dbow sg                        & -           & \textBF{0.112960} \\
     logreg     & pvdm concat + pvdm mean        & -           & 0.143640 \\
     logreg     & pvdm concat + dbow             & -           & 0.119440 \\
     logreg     & pvdm mean + dbow               & -           & 0.117920 \\
@@ -186,6 +188,8 @@ Besides the slightly different setup in the \texttt{gensim} notebook, the \textt
 There is the option to remove infrequent words. Words below a frequency threshold are excluded as if they were not in the document at all, during training and inference. We used this to reduce memory consumption.
 
 It alters the frequent word subsampling formula. The probability of a word being included in the document in \texttt{word2vec} is $P(w)=\max\{(t/f(w))^{1/2}, 1\}$. The altered formula is $P(w)=\max\{(t/f(w))^{1/2} + {t/f(w)}, 1\}$. Since for most words $t/f(w)\approx 0$, the difference between the two formulas are not great. We tried the altered formula but did not obtain better results than using the original.
+
+\texttt{gensim} also introduces a new model, where the dbow model and skip-gram models are trained jointly. The word embeddings are not used directly, but may improve the hierarchical softmax weights and lead to better results. We found this to indeed be the case (\autoref{table:doc_emb}). In our implementation of this model, we shuffled all possible training examples, with the objective being the sum of the dbow and skip-gram objectives. Equivalently, the document can be regarded as a word which appears in all word contexts. For hyperparameter search we tried a window sizes of $2, 4, 6, ..., 12$, which is even since the word being predicted lies in the center.
 
 Reduced window sampling, where instead of using $c$, we use $c'\sim\mathcal{U}\{0,c\}$. This is used in in the \texttt{pvdm} average model and in the \texttt{dbow} model where skip-gram is used. This was not used in the \texttt{pvdm} concat model, presumably because the model required $u_{d,t}$ to have fixed in dimension. We did not experiment with this due to it not being mentioned in either paper.
 
