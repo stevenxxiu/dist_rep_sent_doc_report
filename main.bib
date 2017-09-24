@@ -46,7 +46,6 @@
 
 @article{dwork_preserving_2014,
   title = {Preserving {{Statistical Validity}} in {{Adaptive Data Analysis}}},
-  abstract = {A great deal of effort has been devoted to reducing the risk of spurious scientific discoveries, from the use of sophisticated validation techniques, to deep statistical methods for controlling the false discovery rate in multiple hypothesis testing. However, there is a fundamental disconnect between the theoretical results and the practice of data analysis: the theory of statistical inference assumes a fixed collection of hypotheses to be tested, or learning algorithms to be applied, selected non-adaptively before the data are gathered, whereas in practice data is shared and reused with hypotheses and new analyses being generated on the basis of data exploration and the outcomes of previous analyses. In this work we initiate a principled study of how to guarantee the validity of statistical inference in adaptive data analysis. As an instance of this problem, we propose and investigate the question of estimating the expectations of \$m\$ adaptively chosen functions on an unknown distribution given \$n\$ random samples. We show that, surprisingly, there is a way to estimate an exponential in \$n\$ number of expectations accurately even if the functions are chosen adaptively. This gives an exponential improvement over standard empirical estimators that are limited to a linear number of estimates. Our result follows from a general technique that counter-intuitively involves actively perturbing and coordinating the estimates, using techniques developed for privacy preservation. We give additional applications of this technique to our question.},
   archivePrefix = {arXiv},
   eprinttype = {arxiv},
   eprint = {1411.2664},
@@ -78,7 +77,6 @@
 
 @misc{mohr_gensim_2017,
   title = {Gensim Doc2vec \& {{IMDB}} Sentiment Dataset},
-  abstract = {gensim - Topic Modelling for Humans},
   howpublished = {\url{https://github.com/RaRe-Technologies/gensim/blob/becc6d3be63627ff7b05906fca8a113ab1e128a0/docs/notebooks/doc2vec-IMDB.ipynb}},
   journal = {GitHub},
   author = {Mohr, Gordon},
@@ -88,7 +86,6 @@
 @inproceedings{arora_rand-walk:_2015,
   title = {{{RAND}}-{{WALK}}: {{A Latent Variable Model Approach}} to {{Word Embeddings}}},
   shorttitle = {{{RAND}}-{{WALK}}},
-  abstract = {Semantic word embeddings represent the meaning of a word via a vector, and are created by diverse methods. Many use nonlinear operations on co-occurrence statistics, and have hand-tuned hyperparameters and reweighting methods. This paper proposes a new generative model, a dynamic version of the log-linear topic model of\textasciitilde$\backslash$citet\{mnih2007three\}. The methodological novelty is to use the prior to compute closed form expressions for word statistics. This provides a theoretical justification for nonlinear models like PMI, word2vec, and GloVe, as well as some hyperparameter choices. It also helps explain why low-dimensional semantic embeddings contain linear algebraic structure that allows solution of word analogies, as shown by\textasciitilde$\backslash$citet\{mikolov2013efficient\} and many subsequent papers. Experimental support is provided for the generative model assumptions, the most important of which is that latent word vectors are fairly uniformly dispersed in space.},
   archivePrefix = {arXiv},
   eprinttype = {arxiv},
   eprint = {1502.03520},
@@ -111,7 +108,6 @@
 
 @article{dyer_notes_2014,
   title = {Notes on {{Noise Contrastive Estimation}} and {{Negative Sampling}}},
-  abstract = {Estimating the parameters of probabilistic models of language such as maxent models and probabilistic neural models is computationally difficult since it involves evaluating partition functions by summing over an entire vocabulary, which may be millions of word types in size. Two closely related strategies---noise contrastive estimation (Mnih and Teh, 2012; Mnih and Kavukcuoglu, 2013; Vaswani et al., 2013) and negative sampling (Mikolov et al., 2012; Goldberg and Levy, 2014)---have emerged as popular solutions to this computational problem, but some confusion remains as to which is more appropriate and when. This document explicates their relationships to each other and to other estimation techniques. The analysis shows that, although they are superficially similar, NCE is a general parameter estimation technique that is asymptotically unbiased, while negative sampling is best understood as a family of binary classification models that are useful for learning word representations but not as a general-purpose estimator.},
   archivePrefix = {arXiv},
   eprinttype = {arxiv},
   eprint = {1410.8251},
